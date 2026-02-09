@@ -1,0 +1,16 @@
+# Node
+node_modules
+
+# Build
+/dist
+
+# Embedded local postgres data
+/.embedded-postgres
+
+# Env
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: orivion-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-orivion_educacion}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/database/migrations/001_init_core.sql:/docker-entrypoint-initdb.d/001_init_core.sql:ro
+      - ./src/database/migrations/002_academico.sql:/docker-entrypoint-initdb.d/002_academico.sql:ro
+      - ./src/database/migrations/003_curricular.sql:/docker-entrypoint-initdb.d/003_curricular.sql:ro
+      - ./src/database/migrations/004_estudiantes.sql:/docker-entrypoint-initdb.d/004_estudiantes.sql:ro
+      - ./src/database/migrations/005_operacion.sql:/docker-entrypoint-initdb.d/005_operacion.sql:ro
+      - ./src/database/seeds/seed.sql:/docker-entrypoint-initdb.d/006_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-orivion_educacion}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orivion-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-orivion_educacion}
+    ports:
+      - "${PORT:-3000}:3000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
